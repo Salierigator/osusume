@@ -40,7 +40,7 @@ clean       + ranker              user_tower             (read-only consumer)
 | Path | What's in it |
 |---|---|
 | `crawler/` | MyAnimeList crawler, writes `data/raw/` |
-| `cleaning/` | `data/raw/` → `data/clean/` (pipeline being rewritten) |
+| `cleaning/` | `data/raw/` → `data/clean/`, plus the data survey and EDA notebooks |
 | `data/` | Schema samples; raw/clean data are not committed |
 | `model/base.py` | The interface every architecture's serving class implements (`Recommender`) |
 | `model/twotower/retriever/` | Two-tower model: data prep, training, export to `export/twotower/` |
@@ -90,7 +90,7 @@ venv/bin/python service/backend/recommend.py <mal-username> --top-k 20
 
 ## Data & Training
 
-The datasets are MAL-derived and gigabytes in size, so they are not part of this repo; `data/samples/` holds the first rows of each file as a schema reference. The model currently in `export/twotower/` was trained on a mid-2025 snapshot. A fresh 2026 crawl of user ratings and profiles is done (see [`crawler/README.md`](crawler/README.md)); its cleaning pipeline ([`cleaning/`](cleaning/README.md)) is the next step.
+The datasets are MAL-derived and gigabytes in size, so they are not part of this repo; `data/samples/` holds the first rows of each file as a schema reference. The model currently in `export/twotower/` was trained on a mid-2025 snapshot. A fresh 2026 crawl (see [`crawler/README.md`](crawler/README.md)) has been cleaned into 1.9M users, 30.8k anime and 549M ratings and analysed in [`cleaning/`](cleaning/README.md); the next models are built on it.
 
 Retriever training runs on Colab GPU; the ranker trains locally on CPU. Both write into `export/twotower/`, and the service picks up a new model with no code change — see [`model/twotower/README.md`](model/twotower/README.md) for the full retrain loop.
 

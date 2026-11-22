@@ -38,11 +38,11 @@ Private (403), deleted (404), or empty accounts are marked once and never retrie
 
 ## Output
 
-- `anime_mal.jsonl` — raw MAL API anime objects, one per line (`genres` holds genres, themes and demographics together); cleaning flattens them into `details.csv`.
+- `anime_mal.jsonl` — raw MAL API anime objects, one per line (`genres` holds genres, themes and demographics together); cleaning merges them into the anime table.
 - `ratings.csv` — one row per user–anime: `username, anime_id, status, score, num_episodes_watched, is_rewatching, updated_at, start_date, finish_date`.
 - `users.csv` — one row per user: profile fields (gender, birthday, location, joined date, favorites) plus list stats (days watched, mean score, per-status counts, …).
 
-After the crawl, `cleaning/` gets a new pipeline written against these schemas that produces `data/clean/` and refreshes `data/samples/`.
+[`cleaning/`](../cleaning/README.md) reads these files and produces `data/clean/`.
 
 ## Tests
 

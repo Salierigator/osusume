@@ -11,3 +11,5 @@ lightgbm
 requests
 pytest
 sentence-transformers   # offline synopsis embeddings for the retriever's use_synopsis option
+nbconvert               # runs the survey / EDA notebooks in cleaning/
+ipykernel
