@@ -1,5 +1,4 @@
-"""Offline tests for crawl_related: output lines, resume, retries, 429 back-off, giving up and
-stopping early. A fake fetch answers from a script of statuses instead of the network."""
+"""Offline tests for crawl_related, with a fake fetch that answers from a script of statuses."""
 from __future__ import annotations
 
 import json

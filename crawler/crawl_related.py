@@ -7,17 +7,8 @@ Output: data/raw/anime_relations.jsonl, one line per anime: {"id", "status" (200
 MAL has deleted), "crawled_at", "related_anime"}, where related_anime is the API's list as returned.
 Lines are appended as answers arrive, so a rerun skips the ids already written and retries the rest.
 
-MAL answers about 100 requests per two minutes, whatever the pace; past that it holds every open
-request for 30 to 60 seconds instead of answering 429. So the workers share one rate limit just under
-that, and a timeout, network error, 429 or 5xx counts as throttling: the id goes to the back of the
-queue, every worker pauses, and the rate drops by a fifth, then creeps back up to --rate. Other
-errors are retried without a pause, and the run stops early when many requests fail in a row (a
-refused API key, a blocked IP).
-
 Exit code: 0 when every id is answered, 2 when some are still pending (rerun), 1 when it stopped
-on failures.
-
-Usage: python crawler/crawl_related.py [--out PATH] [--limit N] [--workers N] [--rate R]
+after many failures in a row (a refused API key, a blocked IP).
 """
 from __future__ import annotations
 
@@ -40,14 +31,14 @@ DONE = (200, 404)
 
 
 def throttled(status) -> bool:
-    """A failure that means 'slow down': network error or timeout (an exception name), 429, 5xx."""
+    """Past its rate limit MAL holds requests instead of answering 429, so a timeout or network
+    error (an exception name) means 'slow down' too, like 429 and 5xx."""
     return isinstance(status, str) or status == 429 or status >= 500
 
 
 class Limiter:
     """Spaces requests from all threads `interval` seconds apart. slow_down() pauses everyone and
-    cuts the rate by a fifth (once per pause, however many requests failed together); each
-    success then shrinks the interval by 0.1% back towards the starting value."""
+    cuts the rate by a fifth, once per pause however many requests failed together."""
 
     def __init__(self, rate: float):
         self.base = self.interval = 1.0 / rate
@@ -65,7 +56,7 @@ class Limiter:
     def slow_down(self, pause: float) -> None:
         with self.lock:
             now = time.monotonic()
-            if now >= self.paused_until:             # first failure of this stall
+            if now >= self.paused_until:
                 self.interval = min(self.interval * 1.25, 10.0)
                 self.paused_until = now + pause
             self.next = max(self.next, self.paused_until)
@@ -89,7 +80,7 @@ def make_fetch(client_id: str, timeout: float):
                                   params={"fields": "related_anime"}, timeout=(5, timeout))
             if r.status_code == 200:
                 return 200, r.json().get("related_anime", [])
-        except (requests.RequestException, ValueError) as e:   # ValueError: truncated JSON body
+        except requests.RequestException as e:
             return type(e).__name__, None
         return r.status_code, ([] if r.status_code == 404 else None)
 

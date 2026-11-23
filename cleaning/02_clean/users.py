@@ -1,7 +1,7 @@
 """Write the clean users table.
 
 Reads data/eda/survey/account_stats.parquet (which accounts have valid ratings, and their
-counts), data/raw/users.csv (profiles), data/raw/crawl_state.sqlite (crawl time, cohort) and
+counts), data/raw/users.csv (profiles), data/raw/crawl_state.sqlite (crawl time, profile status) and
 data/clean/anime.parquet (favorites may only name anime of the catalog).
 Writes data/clean/users.parquet: one row per kept account, `user_id` = position in crawl order,
 and the account counts into data/clean/cleaning_report.json.
@@ -37,14 +37,13 @@ def load_profiles() -> pl.DataFrame:
 
 def load_crawl_state() -> pl.DataFrame:
     con = sqlite3.connect(f"file:{config.STATE_DB}?mode=ro&immutable=1", uri=True)
-    rows = con.execute("SELECT username, discovered_at, ratings_at, profile_status FROM users "
+    rows = con.execute("SELECT username, ratings_at, profile_status FROM users "
                        "WHERE ratings_status = 'ok'").fetchall()
     con.close()
-    state = pl.DataFrame(rows, schema=["username", "discovered_at", "ratings_at", "profile_status"], orient="row")
+    state = pl.DataFrame(rows, schema=["username", "ratings_at", "profile_status"], orient="row")
     return state.select(
         "username",
         "profile_status",
-        cohort=pl.col("discovered_at").replace_strict(config.COHORT_BY_DISCOVERED_AT, default=config.DEFAULT_COHORT),
         ratings_crawled_at=pl.col("ratings_at").str.to_datetime("%Y-%m-%dT%H:%M:%SZ", time_unit="ms", time_zone="UTC"),
     )
 
@@ -66,7 +65,7 @@ def main() -> None:
                  .with_columns(favorites=pl.when(pl.col("favorites").list.len() > 0).then(pl.col("favorites")))
                  .sort("user_id"))
     out = users.select(
-        "user_id", "username", "cohort", "ratings_crawled_at", "has_profile",
+        "user_id", "username", "ratings_crawled_at", "has_profile",
         "gender", "birth_year", "location", "joined", "favorites", "days_watched", "rewatched",
         pl.col("n_rows").cast(pl.Int32).alias("n_ratings"),
         *[pl.col(f"n_{s}").cast(pl.Int32) for s in config.STATUSES],

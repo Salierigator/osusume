@@ -1,6 +1,6 @@
 """EDA pass: turn the clean tables into small aggregate tables the notebooks plot.
 
-Reads data/clean/{anime,users}.parquet and data/clean/ratings/*.parquet (streamed, a few row
+Reads data/clean/anime.parquet and data/clean/ratings/*.parquet (streamed, a few row
 groups at a time). Writes
   cleaning/03_eda/tables/   committed: anime_stats.parquet, monthly_activity.csv,
                             status_score.csv, lag_after_start.csv, progress.csv, cooccurrence.npz
@@ -52,7 +52,6 @@ def anime_stats(df: pl.DataFrame) -> pl.DataFrame:
     return df.group_by("anime_id").agg(
         pl.len().alias("n_ratings"),
         *[(status == s).sum().alias(f"n_{s}") for s in config.STATUSES],
-        *[(pl.col("cohort") == c).sum().alias(f"n_{c}") for c in ("collector", "kaggle_2022", "legacy_2025")],
         (score > 0).sum().alias("n_scored"),
         score.cast(pl.Int64).sum().alias("score_sum"),
         (score.cast(pl.Int64) ** 2).sum().alias("score_sq_sum"),
@@ -70,11 +69,11 @@ def small_tables(df: pl.DataFrame) -> dict[str, pl.DataFrame]:
     return {
         "monthly_activity": df.filter(pl.col("updated_at").is_not_null())
                               .group_by(pl.col("updated_at").dt.truncate("1mo").dt.date().alias("month"),
-                                        "status", "cohort").len(),
+                                        "status").len(),
         "status_score": df.group_by("status", "score").len(),
         "lag_after_start": df.filter(watched & (pl.col("start_precision") == "day") & lag.is_not_null())
                              .group_by(lag.cut(LAG_EDGES, labels=LAG_LABELS, left_closed=True).cast(pl.String)
-                                          .alias("lag"), "cohort").len(),
+                                          .alias("lag")).len(),
         "progress": df.filter(pl.col("status").is_in(["dropped", "on_hold", "watching"]) & progress.is_not_null())
                       .group_by("status", (progress * 10).floor().clip(0, 9).cast(pl.Int8).alias("decile")).len(),
     }
@@ -96,7 +95,6 @@ def main() -> None:
     args = ap.parse_args()
 
     anime = pl.read_parquet(config.CLEAN_ANIME)
-    users = pl.read_parquet(config.CLEAN_USERS, columns=["user_id", "cohort"])
     item = anime.select("anime_id", "episodes", "members", "start_precision",
                         pl.col("start_date").alias("anime_start"))
     genres = anime.select("anime_id", pl.col("genres").alias("genre")).explode("genre").drop_nulls()
@@ -110,7 +108,6 @@ def main() -> None:
     for i, batch in enumerate(rules.iter_user_batches(paths, key="user_id", max_groups=args.max_groups)):
         df = (batch.with_columns(pl.col("status").cast(pl.String))
                    .join(item, on="anime_id", how="left")
-                   .join(users, on="user_id", how="left")
                    .with_columns(watched=pl.col("status").is_in(config.WATCHED)))
         per_user.append(user_stats(df, genres))
         per_anime.append(anime_stats(df))
@@ -123,7 +120,9 @@ def main() -> None:
 
     per_user = pl.concat(per_user, how="diagonal")
     genre_cols = sorted(set(genres["genre"].to_list()) & set(per_user.columns))
-    per_user = per_user.with_columns(pl.col(genre_cols).fill_null(0)).rename({g: f"genre_{g}" for g in genre_cols})
+    # the pivot emits genres in a different order on every run, so fix it here
+    per_user = (per_user.select(pl.exclude(genre_cols), pl.col(genre_cols).fill_null(0))
+                        .rename({g: f"genre_{g}" for g in genre_cols}))
     sums = [c for c in per_anime[0].columns if c not in ("anime_id", "first_update")]
     per_anime = (pl.concat(per_anime).group_by("anime_id")
                    .agg(pl.col(sums).sum(), pl.col("first_update").min()).sort("anime_id"))

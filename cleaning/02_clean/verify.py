@@ -67,8 +67,6 @@ def main() -> None:
     check("every user has ratings", users["n_ratings"].min() >= 1)
     check("mean_score is null exactly when nothing is scored, never NaN",
           users["mean_score"].is_nan().sum() == 0 and (users["mean_score"].is_null() == (users["n_scored"] == 0)).all())
-    check("cohort always set", users["cohort"].null_count() == 0,
-          str(dict(users["cohort"].value_counts().iter_rows())))
     check("favorites only reference known anime",
           users.select(pl.col("favorites").explode().drop_nulls().is_in(known).all()).item())
 

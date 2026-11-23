@@ -57,13 +57,6 @@ RELATION_TYPES = ["sequel", "prequel", "side_story", "parent_story", "summary", 
                   "alternative_version", "alternative_setting", "spin_off", "character", "other"]
 FRANCHISE_RELATIONS = [t for t in RELATION_TYPES if t not in ("character", "other")]
 
-# --- cohorts: how a username entered the crawl, read from crawl_state.discovered_at ---
-COHORT_BY_DISCOVERED_AT = {
-    "2026-08-07T03:00:00Z": "kaggle_2022",
-    "2026-07-28T04:05:00Z": "legacy_2025",
-}
-DEFAULT_COHORT = "collector"
-
 # --- EDA aggregates ---
 WATCHED = ["completed", "watching"]
 TIME_SPLITS = [date(2025, 1, 1), date(2025, 7, 1), date(2026, 1, 1)]   # candidate train / test cut dates

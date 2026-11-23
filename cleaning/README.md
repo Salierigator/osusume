@@ -47,10 +47,12 @@ python -m pytest cleaning/tests -q
 | Table | Rows | Key | Content |
 |---|---|---|---|
 | `anime.parquet` | 30,801 | `anime_id` | titles, format, source, age rating, episodes, dates, genres / themes / demographics, studios, producers, synopsis, MAL statistics |
-| `users.parquet` | 1,907,258 | `user_id` | username, cohort, crawl time, profile (gender, birth year, location, join date, favorites), list counts per status |
+| `users.parquet` | 1,907,258 | `user_id` | username, crawl time, profile (gender, birth year, location, join date, favorites), list counts per status |
 | `ratings/` | 548,928,922 | `user_id`, `anime_id` | status, score (0 = not scored), episodes watched, rewatching flag, `updated_at`, start and finish dates |
 
 `user_id` is the user's position in crawl order. Ratings are sorted by `(user_id, updated_at)`, a user never spans two files, and row-group statistics on `user_id` make reading a range of users cheap.
+
+Usernames were collected in two ways: by polling MAL's recently-online page during the crawl, and from two older username lists, from 2022 and 2025. The users are therefore a mix of accounts active during the crawl and accounts that stopped long before it: 40% have no list edit on or after 2025-07-01.
 
 MAL statistics in the anime table (`score`, `members`, `favorites`, `rank`) were crawled after every rating, so a model evaluated on a time split must not use them as features of the test period.
 
