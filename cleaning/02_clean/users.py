@@ -71,7 +71,7 @@ def main() -> None:
         pl.col("n_rows").cast(pl.Int32).alias("n_ratings"),
         *[pl.col(f"n_{s}").cast(pl.Int32) for s in config.STATUSES],
         pl.col("n_scored").cast(pl.Int32),
-        (scores / pl.col("n_scored")).cast(pl.Float32).alias("mean_score"),
+        pl.when(pl.col("n_scored") > 0).then(scores / pl.col("n_scored")).cast(pl.Float32).alias("mean_score"),
         "first_update", "last_update",
     )
     config.CLEAN.mkdir(parents=True, exist_ok=True)

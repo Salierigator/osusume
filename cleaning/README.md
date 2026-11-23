@@ -7,6 +7,7 @@ cleaning/
 ├── config.py        # paths, row rules, account thresholds: every number a rule depends on
 ├── rules.py         # row fixes for ratings + the streaming reader (never splits a user)
 ├── catalog.py       # merges the MAL and Jikan catalogs into one anime table
+├── relations.py     # relations between anime and the franchises they form
 ├── accounts.py      # which accounts are dropped whole
 ├── plotting.py      # matplotlib style shared by the notebooks
 ├── 01_survey/       # measure before deciding
@@ -30,7 +31,7 @@ From the repo root, in this order:
 
 ```bash
 python -m cleaning.01_survey.account_stats   # data/eda/survey/account_stats.parquet
-python -m cleaning.02_clean.anime            # data/clean/anime.parquet
+python -m cleaning.02_clean.anime            # data/clean/anime.parquet, anime_relations.parquet
 python -m cleaning.02_clean.users            # data/clean/users.parquet
 python -m cleaning.02_clean.ratings          # data/clean/ratings/part-NN.parquet
 python -m cleaning.02_clean.verify           # must end with "all checks passed"
@@ -78,6 +79,8 @@ MAL statistics in the anime table (`score`, `members`, `favorites`, `rank`) were
 **Users**: the profile file is append-only, so the last row of a username wins. Birth years outside 1940–2016 become null. Favorites that name an anime outside the catalog are removed, and the favorites of 61 users whose profile re-crawl failed are blanked.
 
 **Anime**: one row per id from the MAL API file; the Jikan file supplies producers, the genre / theme / demographic split and 25 anime that were later deleted from MAL but still appear in lists (`on_mal = false`). Partial start dates are padded to the first day and marked in `start_precision`.
+
+**Relations and franchises** (`relations.py`, relation types in `config.py`): `anime_relations.parquet` keeps every relation MAL lists (sequel, prequel, side story, summary, alternative version, spin-off, ...) as one directed row, minus relations to anime outside the catalog, relations of an anime to itself and repeats. `franchise_id` in the anime table is the smallest `anime_id` of a connected component over every relation type except `character` and `other`, each edge taken both ways since MAL sometimes lists a relation on one side only. `character` and `other` are left out because they also join unrelated works: crossovers such as Isekai Quartet, collaboration ads, music videos shared by several shows. The rest keeps a franchise together, e.g. Attack on Titan (20 entries: seasons, OVAs, recap movies, the Junior High spin-off) or Fate (38). Known limits: a crossover special filed as a side story still joins two franchises (Detective Conan and Lupin III), and adaptations MAL links only through `other` stay apart (the later Fate/Grand Order series).
 
 ## What is not filtered here
 

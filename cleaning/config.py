@@ -17,6 +17,7 @@ RAW_RATINGS = RAW / "ratings"
 RAW_USERS = RAW / "users.csv"
 RAW_ANIME_MAL = RAW / "anime_mal.jsonl"
 RAW_ANIME_JIKAN = RAW / "anime_jikan.jsonl"
+RAW_ANIME_RELATIONS = RAW / "anime_relations.jsonl"
 STATE_DB = RAW / "crawl_state.sqlite"
 
 ACCOUNT_STATS = EDA / "survey" / "account_stats.parquet"
@@ -26,6 +27,7 @@ SAMPLE_RATINGS = EDA / "sample_ratings.parquet"   # every row of a 1% user sampl
 TABLES = ROOT / "cleaning" / "03_eda" / "tables"  # small aggregate tables, committed
 
 CLEAN_ANIME = CLEAN / "anime.parquet"
+CLEAN_ANIME_RELATIONS = CLEAN / "anime_relations.parquet"
 CLEAN_USERS = CLEAN / "users.parquet"
 CLEAN_RATINGS = CLEAN / "ratings"
 CLEAN_REPORT = CLEAN / "cleaning_report.json"
@@ -48,6 +50,12 @@ MAX_WATCH_DAYS = 1_000     # days of watch time = 6.6 hours every day for ten ye
 
 # --- row rules (users) ---
 BIRTH_YEAR_MIN, BIRTH_YEAR_MAX = 1940, 2016
+
+# --- anime relations (MAL's types). A franchise follows every type but `character` and `other`:
+# those two also join unrelated works (crossovers, collaboration ads, shared music videos). ---
+RELATION_TYPES = ["sequel", "prequel", "side_story", "parent_story", "summary", "full_story",
+                  "alternative_version", "alternative_setting", "spin_off", "character", "other"]
+FRANCHISE_RELATIONS = [t for t in RELATION_TYPES if t not in ("character", "other")]
 
 # --- cohorts: how a username entered the crawl, read from crawl_state.discovered_at ---
 COHORT_BY_DISCOVERED_AT = {

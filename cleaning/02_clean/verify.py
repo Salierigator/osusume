@@ -1,7 +1,7 @@
 """Check the invariants of data/clean.
 
-Reads data/clean/{anime,users}.parquet, the footers of data/clean/ratings/*.parquet and one
-streamed pass over three of its columns. Writes nothing. Exit code 1 if a check fails.
+Reads data/clean/{anime,anime_relations,users}.parquet, the footers of data/clean/ratings/*.parquet
+and one streamed pass over three of its columns. Writes nothing. Exit code 1 if a check fails.
 
 Usage: python -m cleaning.02_clean.verify
 """
@@ -10,8 +10,11 @@ from __future__ import annotations
 import json
 import sys
 
+import numpy as np
 import polars as pl
 import pyarrow.parquet as pq
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
 
 from cleaning import config, rules
 
@@ -36,11 +39,34 @@ def main() -> None:
           and anime["anime_id"].null_count() == 0, f"{anime.height:,} rows")
     check("title never null", anime["title"].null_count() == 0)
 
+    print("== anime relations")
+    relations = pl.read_parquet(config.CLEAN_ANIME_RELATIONS)
+    check("row count matches the report", relations.height == report["relations"]["edges_out"],
+          f"{relations.height:,} rows")
+    check("relations link two different known anime",
+          relations.select(pl.col("anime_id").is_in(known).all() & pl.col("related_id").is_in(known).all()
+                           & (pl.col("anime_id") != pl.col("related_id")).all()).item())
+    check("no repeated (anime_id, related_id, relation)",
+          relations.select(pl.struct(pl.all()).is_duplicated().sum()).item() == 0)
+    # Franchises recomputed with scipy, independently of cleaning/relations.py.
+    index = {a: i for i, a in enumerate(known)}
+    strong = relations.filter(pl.col("relation").cast(pl.String).is_in(config.FRANCHISE_RELATIONS))
+    graph = coo_matrix((np.ones(strong.height), ([index[a] for a in strong["anime_id"]],
+                                                 [index[b] for b in strong["related_id"]])),
+                       shape=(len(known), len(known)))
+    _, label = connected_components(graph, directed=False)
+    expected = pl.DataFrame({"anime_id": known, "label": label}).select(pl.col("anime_id").min().over("label"))
+    check("franchise_id is the smallest anime_id of its component over FRANCHISE_RELATIONS",
+          anime["franchise_id"].null_count() == 0 and (anime["franchise_id"] == expected["anime_id"]).all(),
+          f"{anime['franchise_id'].n_unique():,} franchises")
+
     print("== users")
     n_users = users.height
     check("user_id is 0..n-1 in order", users["user_id"].to_list() == list(range(n_users)), f"{n_users:,} users")
     check("username unique", users["username"].n_unique() == n_users)
     check("every user has ratings", users["n_ratings"].min() >= 1)
+    check("mean_score is null exactly when nothing is scored, never NaN",
+          users["mean_score"].is_nan().sum() == 0 and (users["mean_score"].is_null() == (users["n_scored"] == 0)).all())
     check("cohort always set", users["cohort"].null_count() == 0,
           str(dict(users["cohort"].value_counts().iter_rows())))
     check("favorites only reference known anime",
