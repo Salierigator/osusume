@@ -47,16 +47,32 @@ def main() -> None:
           relations.select(pl.col("anime_id").is_in(known).all() & pl.col("related_id").is_in(known).all()
                            & (pl.col("anime_id") != pl.col("related_id")).all()).item())
     check("no repeated (anime_id, related_id, relation)",
-          relations.select(pl.struct(pl.all()).is_duplicated().sum()).item() == 0)
+          relations.select(pl.struct("anime_id", "related_id", "relation").is_duplicated().sum()).item() == 0)
+    kind, link = pl.col("relation").cast(pl.String), pl.col("franchise_link")
+    strong = kind.is_in(config.FRANCHISE_RELATIONS)
+    cut = relations.filter(strong & ~link)
+    check("franchise links are relations of FRANCHISE_RELATIONS", relations.filter(link & ~strong).height == 0)
+    check("cut links match the report", cut.height == report["relations"]["links_cut"], f"{cut.height} rows")
+    pair = [pl.min_horizontal("anime_id", "related_id").alias("a"),
+            pl.max_horizontal("anime_id", "related_id").alias("b")]
+    check("both rows of a pair are cut or kept together",
+          relations.filter(strong).group_by(pair).agg(link.n_unique())["franchise_link"].max() == 1)
+    short = anime.filter(pl.col("media_type").is_in(config.SHORT_MEDIA)
+                         | (pl.col("episode_minutes") < config.SHORT_MINUTES))["anime_id"]
+    above = pl.concat([relations.filter(kind == "parent_story").select(x="anime_id", p="related_id"),
+                       relations.filter(kind.is_in(["side_story", "spin_off"])).select(x="related_id", p="anime_id")])
+    scope = set(short) | set(above.unique().group_by("x").len().filter(pl.col("len") >= 2)["x"])
+    check("every cut link touches a short entry or an entry with two or more parent links",
+          cut.filter(~pl.col("anime_id").is_in(scope) & ~pl.col("related_id").is_in(scope)).height == 0)
     # Franchises recomputed with scipy, independently of cleaning/relations.py.
     index = {a: i for i, a in enumerate(known)}
-    strong = relations.filter(pl.col("relation").cast(pl.String).is_in(config.FRANCHISE_RELATIONS))
-    graph = coo_matrix((np.ones(strong.height), ([index[a] for a in strong["anime_id"]],
-                                                 [index[b] for b in strong["related_id"]])),
+    links = relations.filter(link)
+    graph = coo_matrix((np.ones(links.height), ([index[a] for a in links["anime_id"]],
+                                                [index[b] for b in links["related_id"]])),
                        shape=(len(known), len(known)))
     _, label = connected_components(graph, directed=False)
     expected = pl.DataFrame({"anime_id": known, "label": label}).select(pl.col("anime_id").min().over("label"))
-    check("franchise_id is the smallest anime_id of its component over FRANCHISE_RELATIONS",
+    check("franchise_id is the smallest anime_id of its component over the franchise links",
           anime["franchise_id"].null_count() == 0 and (anime["franchise_id"] == expected["anime_id"]).all(),
           f"{anime['franchise_id'].n_unique():,} franchises")
 

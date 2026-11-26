@@ -56,6 +56,10 @@ BIRTH_YEAR_MIN, BIRTH_YEAR_MAX = 1940, 2016
 RELATION_TYPES = ["sequel", "prequel", "side_story", "parent_story", "summary", "full_story",
                   "alternative_version", "alternative_setting", "spin_off", "character", "other"]
 FRANCHISE_RELATIONS = [t for t in RELATION_TYPES if t not in ("character", "other")]
+# Thresholds of "detach short bridges" in cleaning/relations.py.
+SHORT_MEDIA = ["cm", "pv", "music"]
+SHORT_MINUTES = 2
+FULL_LENGTH_MINUTES = 20
 
 # --- EDA aggregates ---
 WATCHED = ["completed", "watching"]

@@ -46,7 +46,8 @@ python -m pytest cleaning/tests -q
 
 | Table | Rows | Key | Content |
 |---|---|---|---|
-| `anime.parquet` | 30,801 | `anime_id` | titles, format, source, age rating, episodes, dates, genres / themes / demographics, studios, producers, synopsis, MAL statistics |
+| `anime.parquet` | 30,801 | `anime_id` | titles, format, source, age rating, episodes, dates, genres / themes / demographics, studios, producers, synopsis, MAL statistics, `franchise_id` |
+| `anime_relations.parquet` | 31,758 | `anime_id`, `related_id`, `relation` | one relation MAL lists from `anime_id` to `related_id`, of 11 types, and `franchise_link`: whether it puts the two anime in one franchise |
 | `users.parquet` | 1,907,258 | `user_id` | username, crawl time, profile (gender, birth year, location, join date, favorites), list counts per status |
 | `ratings/` | 548,928,922 | `user_id`, `anime_id` | status, score (0 = not scored), episodes watched, rewatching flag, `updated_at`, start and finish dates |
 
@@ -54,7 +55,7 @@ python -m pytest cleaning/tests -q
 
 Usernames were collected in two ways: by polling MAL's recently-online page during the crawl, and from two older username lists, from 2022 and 2025. The users are therefore a mix of accounts active during the crawl and accounts that stopped long before it: 40% have no list edit on or after 2025-07-01.
 
-MAL statistics in the anime table (`score`, `members`, `favorites`, `rank`) were crawled after every rating, so a model evaluated on a time split must not use them as features of the test period.
+MAL statistics in the anime table (`score`, `members`, `favorites`, `rank`) were crawled after every rating, so a model evaluated on a time split must not use them as features of the test period. Relations were crawled later still: they also link anime added to MAL after a split date, which `mal_created_at` identifies.
 
 ## Rules
 
@@ -82,7 +83,12 @@ MAL statistics in the anime table (`score`, `members`, `favorites`, `rank`) were
 
 **Anime**: one row per id from the MAL API file; the Jikan file supplies producers, the genre / theme / demographic split and 25 anime that were later deleted from MAL but still appear in lists (`on_mal = false`). Partial start dates are padded to the first day and marked in `start_precision`.
 
-**Relations and franchises** (`relations.py`, relation types in `config.py`): `anime_relations.parquet` keeps every relation MAL lists (sequel, prequel, side story, summary, alternative version, spin-off, ...) as one directed row, minus relations to anime outside the catalog, relations of an anime to itself and repeats. `franchise_id` in the anime table is the smallest `anime_id` of a connected component over every relation type except `character` and `other`, each edge taken both ways since MAL sometimes lists a relation on one side only. `character` and `other` are left out because they also join unrelated works: crossovers such as Isekai Quartet, collaboration ads, music videos shared by several shows. The rest keeps a franchise together, e.g. Attack on Titan (20 entries: seasons, OVAs, recap movies, the Junior High spin-off) or Fate (38). Known limits: a crossover special filed as a side story still joins two franchises (Detective Conan and Lupin III), and adaptations MAL links only through `other` stay apart (the later Fate/Grand Order series).
+**Relations and franchises** (`relations.py`, relation types and thresholds in `config.py`): `anime_relations.parquet` keeps every relation MAL lists (sequel, prequel, side story, summary, alternative version, spin-off, ...) as one directed row, minus relations to anime outside the catalog, relations of an anime to itself and repeats. `franchise_id` in the anime table is the smallest `anime_id` of a connected component over the rows with `franchise_link = true`, each taken both ways since MAL sometimes lists a relation on one side only. A relation is a franchise link when its type is neither `character` nor `other` (both also join unrelated works: crossovers such as Isekai Quartet, collaboration ads, music videos shared by several shows) and neither of two rules cuts it:
+
+- **Detach crossovers.** P is a parent of X when X is a side story or spin-off of P. When both pages list each other that way, the pair says nothing about direction and does not count. An entry whose parents fall in different franchises once it and the other entries with several parents are left out is a crossover: it keeps one parent (one whose page lists it back, then the most popular) and loses its links to the others and to its prequels.
+- **Detach short bridges.** Short entries (commercials, promos, music videos, episodes under 2 minutes) linked to two or more franchises that each have a full-length TV series (episodes of 20 minutes or more) lose their links to longer entries. Short entries linked to each other count as one.
+
+The rules cut 57 of the 21,968 relations of the other types: the links of 21 crossovers (Lupin III vs. Detective Conan, Doraemon specials that MAL also files under Crayon Shin-chan, Fairy Tail x Rave, Mameshiba collaboration ads, ...) and of one chain of one-minute morning-show shorts that joined Mazinger, Yatterman, Gatchaman and Hakushon Daimaou. The 30,801 anime form 21,026 franchises: 17,639 are a single anime and 48 have more than 20 entries (Gundam, the largest, has 131; Attack on Titan has 20, Fate 38). Known limits: crossovers that MAL files as spin-offs on both pages still merge two franchises (Mazinger and Getter Robo; Creamy Mami, Magical Emi and Persia), the rules occasionally split a real franchise (one Pororo series), and adaptations MAL links only through `other` stay apart (the later Fate/Grand Order series).
 
 ## What is not filtered here
 
@@ -95,8 +101,8 @@ Bulk-imported lists, users who never score and users who give one score to every
 | Notebook | Question |
 |---|---|
 | `01_survey/thresholds.ipynb` | Which accounts cannot be real, and where to cut |
-| `03_eda/anime.ipynb` | What the catalog contains and how activity spreads over it |
+| `03_eda/anime.ipynb` | What the catalog contains and how activity spreads over it and over franchises |
 | `03_eda/users.ipynb` | Who the users are, profile coverage, list sizes, scoring habits, taste by gender |
 | `03_eda/ratings.ipynb` | Status and score distributions, progress on dropped anime, optional fields |
-| `03_eda/time.ipynb` | What `updated_at` supports: date splits, recency, watch order |
+| `03_eda/time.ipynb` | What `updated_at` supports: date splits, recency, watch order, how much of a test period continues a known franchise |
 | `03_eda/correlations.ipynb` | What moves together across users, anime, genres and pairs of anime |

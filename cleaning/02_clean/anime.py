@@ -2,8 +2,8 @@
 
 Reads data/raw/anime_mal.jsonl and data/raw/anime_jikan.jsonl (merge rules: cleaning/catalog.py) and
 data/raw/anime_relations.jsonl (cleaning/relations.py). Writes data/clean/anime.parquet, one row per
-anime_id with its franchise_id, data/clean/anime_relations.parquet, and the "relations" section of
-data/clean/cleaning_report.json.
+anime_id with its franchise_id, data/clean/anime_relations.parquet, each relation marked as a franchise link or
+not, and the "relations" section of data/clean/cleaning_report.json.
 
 Usage: python -m cleaning.02_clean.anime
 """
@@ -18,7 +18,10 @@ def main() -> None:
     anime = catalog.build_anime()
     ids = anime["anime_id"].to_list()
     edges, counts = relations.load_relations(config.RAW_ANIME_RELATIONS, ids)
-    anime = anime.with_columns(relations.franchise_ids(ids, edges, config.FRANCHISE_RELATIONS))
+    links, found = relations.franchise_links(edges, anime)
+    counts.update(found)
+    edges = edges.with_columns(links)
+    anime = anime.with_columns(relations.franchise_ids(ids, edges))
     config.CLEAN.mkdir(parents=True, exist_ok=True)
     anime.write_parquet(config.CLEAN_ANIME, compression="zstd")
     edges.write_parquet(config.CLEAN_ANIME_RELATIONS, compression="zstd")
