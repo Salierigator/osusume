@@ -1,27 +1,54 @@
-franchise_id,anime_id,title,media_type,episodes,episode_minutes,start_date,members
-246,246,Groove Adventure Rave,tv,51,24.083334,2001-10-13,108034
-753,753,Chijoku Shinsatsushitsu,ova,2,26.433332,2003-05-25,6430
-6702,6702,Fairy Tail,tv,175,24.733334,2009-10-12,1868188
-6702,9982,Fairy Tail OVA,ova,5,27.416666,2011-04-15,173878
-6702,12049,Fairy Tail Movie 1: Houou no Miko,movie,1,86.0,2012-08-18,233162
-6702,17535,Fairy Tail Movie 1: Houou no Miko - Hajimari no Asa,special,1,12.166667,2013-02-15,95515
-6702,18393,Fairy Tail x Rave,ova,1,25.0,2013-08-16,131483
-6702,22043,Fairy Tail (2014),tv,102,24.333334,2014-04-05,1091195
-6702,32930,Fairy Tail OVA (2016),ova,3,27.0,2016-05-17,90022
-6702,30778,Fairy Tail Movie 2: Dragon Cry,movie,1,84.0,2017-05-06,209446
-6702,35972,Fairy Tail: Final Series,tv,51,23.833334,2018-10-07,569704
-6702,49785,Fairy Tail: 100-nen Quest,tv,25,23.833334,2024-07-07,179766
-6702,60063,Fairy Tail: 100-nen Quest - Kanwa - Lucy's Diary,tv_special,1,23.833334,2024-10-06,3655
-18799,18799,Take Your Way,music,1,3.7166667,2013-05-20,3471
-32212,38096,Ensemble Girls!!,ona,1,1.6166667,2016-06-19,950
-32212,32212,Ensemble Stars!,tv,24,23.816668,2019-07-07,53215
-32212,40459,Ensemble Stars! Picture Drama,special,12,2.0,2019-09-26,1797
-32212,40462,Ensemble Stars! Recap Special,tv_special,1,23.0,2019-09-29,2451
-32212,50414,Ensemble Stars!! Road to Show!!,movie,1,72.0,2022-03-04,7124
-32212,52999,Ensemble Stars!! Tsuioku Selection Element,ona,6,12.633333,2023-04-06,3674
-32212,55125,Ensemble Stars!! Tsuioku Selection Crossroad,ona,6,12.0,2023-11-10,2131
-32212,56746,Ensemble Stars!! Tsuioku Selection Checkmate,ona,6,11.216666,2024-03-10,2026
-33203,33203,Fukumenkei Noise,tv,12,23.866667,2017-04-11,138973
-43662,43662,Shuke He Beita,tv,13,20.0,1989-10-13,143
-43662,45080,Shuke Beita,tv,52,11.333333,2019-09-27,129
-43662,57455,Shuke Beita: Wujiao Feidie,movie,1,92.416664,2023-12-30,139
+franchise_id,anime_id,title,members
+246,246,Groove Adventure Rave,108034
+753,753,Chijoku Shinsatsushitsu,6430
+4069,4069,Pucca,9531
+4069,6609,Pucca (TV),20385
+4069,10810,Pucca (TV) 2nd Season,9521
+4069,48235,Pucca 3,1609
+6702,6702,Fairy Tail,1868188
+6702,9982,Fairy Tail OVA,173878
+6702,12049,Fairy Tail Movie 1: Houou no Miko,233162
+6702,17535,Fairy Tail Movie 1: Houou no Miko - Hajimari no Asa,95515
+6702,18393,Fairy Tail x Rave,131483
+6702,22043,Fairy Tail (2014),1091195
+6702,32930,Fairy Tail OVA (2016),90022
+6702,30778,Fairy Tail Movie 2: Dragon Cry,209446
+6702,35972,Fairy Tail: Final Series,569704
+6702,49785,Fairy Tail: 100-nen Quest,179766
+6702,60063,Fairy Tail: 100-nen Quest - Kanwa - Lucy's Diary,3655
+18799,18799,Take Your Way,3471
+30072,30072,Hito no Kita Tooku Nagai Michi,363
+32212,38096,Ensemble Girls!!,950
+32212,32212,Ensemble Stars!,53215
+32212,40459,Ensemble Stars! Picture Drama,1797
+32212,40462,Ensemble Stars! Recap Special,2451
+32212,50414,Ensemble Stars!! Road to Show!!,7124
+32212,52999,Ensemble Stars!! Tsuioku Selection Element,3674
+32212,55125,Ensemble Stars!! Tsuioku Selection Crossroad,2131
+32212,56746,Ensemble Stars!! Tsuioku Selection Checkmate,2026
+32262,32262,Renai Boukun,402658
+33203,33203,Fukumenkei Noise,138973
+43662,43662,Shuke He Beita,143
+43662,45080,Shuke Beita,129
+43662,57455,Shuke Beita: Wujiao Feidie,139
+44218,44218,Tunshi Xingkong,13626
+44218,49571,Tunshi Xingkong 2nd Season,9662
+44218,56523,Tunshi Xingkong 3rd Season,5764
+44218,56524,Tunshi Xingkong 4th Season,6786
+44218,59939,Tunshi Xingkong Movie: Xueluo Dalu,2459
+44218,62726,Tunshi Xingkong Movie: Juezhan Yuanshi Xing,1256
+44218,64458,Tunshi Xingkong Movie: Jie Shou Weiji,562
+44248,44248,Fate/Grand Carnival,63942
+44388,44388,Biao Ren,46735
+44388,62241,Biao Ren Er,3125
+45289,45289,Zhengjiu Zhu Luo Ji,107
+45920,45920,Xiaokang Kang,93
+47669,47669,Wo de Linju Quan Shi Mao,99
+48992,48992,Aru Nihon no Ekaki Shounen,1818
+49750,49750,Juedai Shuang Jiao,1441
+49750,60434,Juedai Shuang Jiao: Tian Wai You Tian,314
+51485,51485,Talk with God,320
+51864,51864,Jian Xian Zai Ci,1252
+51864,57906,Jian Xian Zai Ci 2nd Season,726
+60339,60339,Hitchcock-ui Eotteonhalu,86
+64307,64307,Shine Together,56
